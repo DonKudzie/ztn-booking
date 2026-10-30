@@ -26,6 +26,10 @@ export function daysLabel(days) {
     : a === b ? DAY_SHORT[a - 1] : `${DAY_SHORT[a - 1]}, ${DAY_SHORT[b - 1]}`)).join(', ');
 }
 
+// Read before the client consumes the link: invite / password-reset emails land
+// here with #...&type=invite or type=recovery.
+export const AUTH_LINK_TYPE = new URLSearchParams(location.hash.slice(1)).get('type');
+
 export const isConfigured = !/YOUR-PROJECT|YOUR-ANON/.test(SUPABASE_URL + SUPABASE_ANON_KEY);
 export const db = isConfigured ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 

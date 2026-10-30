@@ -29,11 +29,23 @@
         <label class="field"><span>Password</span><input name="password" type="password" required autocomplete="current-password"></label>
         <div id="loginError" class="notice bad" hidden></div>
         <button class="btn primary" type="submit">Sign in</button>
+        <button class="linkish" type="button" id="forgotBtn" style="justify-self:start">Forgot password?</button>
+      </form>
+    </section>
+
+    <section id="setpw" class="card" style="max-width:420px;margin:40px auto" hidden>
+      <h2 id="setpwTitle">Set your password</h2>
+      <form class="body" id="setpwForm" style="display:grid;gap:12px">
+        <p class="count" style="margin:0" id="setpwWho"></p>
+        <label class="field"><span>New password</span><input name="pw" type="password" required minlength="8" autocomplete="new-password"><small>At least 8 characters.</small></label>
+        <label class="field"><span>Repeat password</span><input name="pw2" type="password" required minlength="8" autocomplete="new-password"></label>
+        <div id="setpwError" class="notice bad" hidden></div>
+        <button class="btn primary" type="submit">Save password</button>
       </form>
     </section>
 
     <section id="denied" class="notice bad" hidden>
-      You are signed in, but your account is not on the engineers list. Ask an administrator to add you (README, step 4).
+      You are signed in, but your account is not on the engineers list. Ask an administrator to add you (README, step 2).
     </section>
 
     <section id="app" hidden>
@@ -157,7 +169,7 @@
     import {
       db, isConfigured, showNotConfigured, STATUSES, STUDIOS, PRIORITIES, LIVE_RECORDED,
       todayISO, addDays, mondayOf, fmtDate, dayName, hm, esc, statusPill, errMsg, toast, weekGridHTML, nowParts,
-      DAY_SHORT, daysLabel,
+      DAY_SHORT, daysLabel, AUTH_LINK_TYPE,
     } from './assets/app.js';
 
     const $ = (id) => document.getElementById(id);
@@ -167,6 +179,8 @@
     let editing = null;
     let shows = [];
     let editingShow = null;
+    // Arrived from an invite or password-reset email: ask for a password first.
+    let needPassword = AUTH_LINK_TYPE === 'invite' || AUTH_LINK_TYPE === 'recovery';
 
     if (!isConfigured) {
       showNotConfigured($('setup'));
@@ -185,8 +199,32 @@
       $('from').value = addDays(mondayOf(todayISO()), -7);
       $('to').value = addDays(mondayOf(todayISO()), 55);
 
-      db.auth.onAuthStateChange((_evt, session) => route(session));
+      db.auth.onAuthStateChange((evt, session) => {
+        if (evt === 'PASSWORD_RECOVERY') needPassword = true;
+        route(session);
+      });
       db.auth.getSession().then(({ data }) => route(data.session));
+
+      $('forgotBtn').onclick = async () => {
+        const email = $('loginForm').email.value.trim();
+        if (!email) { $('loginError').textContent = 'Type your email above first.'; $('loginError').hidden = false; return; }
+        const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: location.href.split('#')[0] });
+        if (error) { $('loginError').textContent = errMsg(error); $('loginError').hidden = false; return; }
+        toast(`If ${email} has an engineer account, a reset link is on its way.`, 'ok', 8000);
+      };
+      $('setpwForm').addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        const f = ev.target;
+        $('setpwError').hidden = true;
+        if (f.pw.value !== f.pw2.value) { $('setpwError').textContent = 'The passwords do not match.'; $('setpwError').hidden = false; return; }
+        const { error } = await db.auth.updateUser({ password: f.pw.value });
+        if (error) { $('setpwError').textContent = errMsg(error); $('setpwError').hidden = false; return; }
+        needPassword = false;
+        f.reset();
+        toast('Password saved. Use it to sign in from now on.', 'ok');
+        const { data } = await db.auth.getSession();
+        route(data.session);
+      });
 
       $('loginForm').addEventListener('submit', async (ev) => {
         ev.preventDefault();
@@ -224,7 +262,14 @@
       $('signOut').hidden = !session;
       $('app').hidden = true;
       $('denied').hidden = true;
+      $('setpw').hidden = true;
       if (!session) { if (channel) { db.removeChannel(channel); channel = null; } return; }
+      if (needPassword) {
+        $('setpwTitle').textContent = AUTH_LINK_TYPE === 'invite' ? 'Welcome — set your password' : 'Choose a new password';
+        $('setpwWho').textContent = `Signed in as ${session.user.email}`;
+        $('setpw').hidden = false;
+        return;
+      }
       const { data: isEng, error } = await db.rpc('is_engineer');
       if (error || !isEng) { $('denied').hidden = false; return; }
       $('app').hidden = false;

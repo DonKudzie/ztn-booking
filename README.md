@@ -32,8 +32,11 @@ The database enforces all of this, so nobody can get around it from the browser.
 4. Open **Authentication → Sign In / Providers → Email** and turn **off** "Allow new users to sign up". Only accounts you create can then sign in.
 
 ### 2. Engineer accounts
-1. Open **Authentication → Users → Add user → Create new user**. Enter the engineer's email and a password, and tick *Auto confirm*.
-2. Make that account an engineer by running this in the SQL Editor (change the email):
+1. Open **Authentication → URL Configuration**. Set **Site URL** to `https://<your-site>/engineer.html` and add the same address under **Redirect URLs**. Invite and password-reset links then open the engineer page.
+2. Open **Authentication → Users → Add user**, then either:
+   - **Send invitation:** the engineer gets an email, clicks the link and chooses their own password on the engineer page. This needs email set up in step 5 (Resend as custom SMTP). Supabase's built-in mailer only delivers to members of your Supabase team.
+   - **Create new user:** you set a password, tick *Auto confirm* and pass the password on.
+3. Make that account an engineer by running this in the SQL Editor (change the email):
    ```sql
    insert into public.engineers (user_id, full_name)
    select id, 'Engineer Name' from auth.users where email = 'engineer@ztn.co.zw';
