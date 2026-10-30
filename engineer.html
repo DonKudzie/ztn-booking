@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ZTN Engineer Console</title>
+  <meta name="description" content="Approve and manage ZTN studio bookings.">
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>ZTN STUDIO SCHEDULE</h1>
+    <nav>
+      <a href="index.html">Book a studio</a>
+      <a href="engineer.html" aria-current="page">Engineers</a>
+      <a href="monitor.html" target="_blank" rel="noopener">Studio monitor</a>
+      <a href="#" id="signOut" hidden>Sign out</a>
+    </nav>
+  </header>
+
+  <main class="wide">
+    <div id="setup"></div>
+
+    <section id="login" class="card" style="max-width:420px;margin:40px auto" hidden>
+      <h2>Engineer sign-in</h2>
+      <form class="body" id="loginForm" style="display:grid;gap:12px">
+        <label class="field"><span>Email</span><input name="email" type="email" required autocomplete="username"></label>
+        <label class="field"><span>Password</span><input name="password" type="password" required autocomplete="current-password"></label>
+        <div id="loginError" class="notice bad" hidden></div>
+        <button class="btn primary" type="submit">Sign in</button>
+      </form>
+    </section>
+
+    <section id="denied" class="notice bad" hidden>
+      You are signed in, but your account is not on the engineers list. Ask an administrator to add you (README, step 4).
+    </section>
+
+    <section id="app" hidden>
+      <div class="toolbar">
+        <label class="field"><span>From</span><input type="date" id="from"></label>
+        <label class="field"><span>To</span><input type="date" id="to"></label>
+        <label class="field"><span>Status</span><select id="fStatus"><option value="">All statuses</option></select></label>
+        <label class="field"><span>Studio</span><select id="fStudio"><option value="">All studios</option></select></label>
+        <label class="field grow"><span>Search</span><input type="search" id="fText" placeholder="Ref, programme, requester, notes…"></label>
+      </div>
+      <div class="actions" style="margin-bottom:14px">
+        <button class="btn primary" id="newBtn">New booking</button>
+        <button class="btn" id="recheckBtn">Re-check conflicts</button>
+        <button class="btn" id="closeBtn">Close completed</button>
+        <button class="btn" id="csvBtn">Export CSV</button>
+        <span class="count" id="count"></span>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-tab="table">Schedule</button>
+        <button role="tab" aria-selected="false" data-tab="week">Week view</button>
+        <button role="tab" aria-selected="false" data-tab="shows">Weekly shows</button>
+      </div>
+      <div id="tab-table" class="table-wrap"></div>
+      <div id="tab-week" hidden>
+        <div class="actions" style="margin-bottom:10px">
+          <button class="btn" id="prevWeek">&larr; Previous</button>
+          <strong id="weekLabel"></strong>
+          <button class="btn" id="nextWeek">Next &rarr;</button>
+          <button class="btn" id="thisWeek">This week</button>
+        </div>
+        <div class="legend"><span><i class="l-show"></i>Regular show</span><span><i class="l-busy"></i>Confirmed / completed booking</span><span><i class="l-clash"></i>Same studio used twice</span></div>
+        <div class="table-wrap" id="weekGrid"></div>
+      </div>
+      <div id="tab-shows" hidden>
+        <p class="count" style="margin:0 0 10px">Programmes that repeat every week. They appear on the studio monitor and warn when a booking overlaps them, but never block it &mdash; you decide.</p>
+        <div class="actions" style="margin-bottom:10px"><button class="btn primary" id="newShowBtn">Add show</button></div>
+        <div class="table-wrap" id="showsTable"></div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="edit">
+    <form method="dialog" id="editForm">
+      <header><h3 id="editTitle">Booking</h3><button class="btn" value="cancel" formnovalidate aria-label="Close">✕</button></header>
+      <div class="body">
+        <div class="grid">
+          <label class="field"><span>Requested date</span><input name="booking_date" type="date" required></label>
+          <label class="field"><span>Start time</span><input name="start_time" type="time" required step="300"></label>
+          <label class="field"><span>End time</span><input name="end_time" type="time" required step="300"></label>
+          <label class="field"><span>Studio</span><select name="studio" required></select></label>
+          <label class="field"><span>Setup access time</span><input name="setup_time" type="time" step="300"></label>
+          <label class="field"><span>Status</span><select name="status"></select></label>
+          <label class="field span-2"><span>Programme / production</span><input name="title" required maxlength="200"></label>
+          <label class="field"><span>Priority</span><select name="priority"></select></label>
+          <label class="field"><span>Requester name</span><input name="requester_name" required maxlength="120"></label>
+          <label class="field"><span>Department / Unit</span><input name="department" maxlength="120"></label>
+          <label class="field"><span>Requester email</span><input name="requester_email" type="email" required></label>
+          <label class="field"><span>Contact number</span><input name="contact_number" maxlength="60"></label>
+          <label class="field"><span>Producer / coordinator</span><input name="producer" maxlength="120"></label>
+          <label class="field"><span>Live / Recorded</span><select name="live_recorded"></select></label>
+          <label class="field span-3"><span>Crew / technical support</span><input name="crew" maxlength="1000"></label>
+          <label class="field span-3"><span>Notes</span><textarea name="notes" rows="4" maxlength="8000"></textarea><small>Declined / cancelled emails include these notes as the reason.</small></label>
+        </div>
+        <div id="detailsBox" style="margin-top:16px"></div>
+      </div>
+      <footer>
+        <button class="btn danger" type="button" id="deleteBtn">Delete</button>
+        <div class="actions">
+          <button class="btn" value="cancel" formnovalidate>Cancel</button>
+          <button class="btn primary" type="submit" id="saveBtn" value="save">Save</button>
+        </div>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="showEdit">
+    <form method="dialog" id="showForm">
+      <header><h3 id="showTitle">Weekly show</h3><button class="btn" value="cancel" formnovalidate aria-label="Close">&#x2715;</button></header>
+      <div class="body">
+        <div class="grid">
+          <label class="field span-3"><span>Show / programme *</span><input name="name" required maxlength="200"></label>
+          <fieldset class="field span-3" style="border:0;padding:0;margin:0">
+            <span>Days *</span>
+            <div class="checks" id="showDays"></div>
+          </fieldset>
+          <label class="field"><span>Start *</span><input name="start_time" type="time" required step="300"></label>
+          <label class="field"><span>End *</span><input name="end_time" type="time" required step="300"></label>
+          <label class="field"><span>Studio</span><select name="studio"></select></label>
+          <label class="field"><span>Live / Recorded</span><select name="live_recorded"></select></label>
+          <label class="field span-2"><span>Producer / presenter</span><input name="presenter" maxlength="200"></label>
+          <label class="field"><span>Active from</span><input name="active_from" type="date"><small>Blank = always.</small></label>
+          <label class="field"><span>Active to</span><input name="active_to" type="date"><small>Set this when a show ends.</small></label>
+          <label class="field span-3"><span>Notes</span><input name="notes" maxlength="2000"></label>
+        </div>
+      </div>
+      <footer>
+        <button class="btn danger" type="button" id="deleteShowBtn">Delete</button>
+        <div class="actions">
+          <button class="btn" value="cancel" formnovalidate>Cancel</button>
+          <button class="btn primary" type="submit" value="save">Save</button>
+        </div>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="reason" style="width:min(480px,calc(100vw - 32px))">
+    <form method="dialog">
+      <header><h3 id="reasonTitle">Reason</h3></header>
+      <div class="body">
+        <label class="field"><span>Reason (emailed to the requester)</span><textarea name="text" rows="4" maxlength="1000"></textarea></label>
+      </div>
+      <footer>
+        <span></span>
+        <div class="actions"><button class="btn" value="cancel">Cancel</button><button class="btn primary" value="ok">Apply</button></div>
+      </footer>
+    </form>
+  </dialog>
+
+  <script type="module">
+    import {
+      db, isConfigured, showNotConfigured, STATUSES, STUDIOS, PRIORITIES, LIVE_RECORDED,
+      todayISO, addDays, mondayOf, fmtDate, dayName, hm, esc, statusPill, errMsg, toast, weekGridHTML, nowParts,
+      DAY_SHORT, daysLabel,
+    } from './assets/app.js';
+
+    const $ = (id) => document.getElementById(id);
+    const opts = (list, blank) => (blank ? '<option value=""></option>' : '') + list.map((v) => `<option>${esc(v)}</option>`).join('');
+    let rows = [];
+    let weekStart = mondayOf(todayISO());
+    let editing = null;
+    let shows = [];
+    let editingShow = null;
+
+    if (!isConfigured) {
+      showNotConfigured($('setup'));
+    } else {
+      init();
+    }
+
+    function init() {
+      $('fStatus').innerHTML += STATUSES.map((s) => `<option>${s}</option>`).join('');
+      $('fStudio').innerHTML += STUDIOS.map((s) => `<option>${esc(s)}</option>`).join('');
+      const f = $('editForm');
+      f.studio.innerHTML = opts(STUDIOS);
+      f.status.innerHTML = opts(STATUSES);
+      f.priority.innerHTML = opts(PRIORITIES, true);
+      f.live_recorded.innerHTML = opts(LIVE_RECORDED, true);
+      $('from').value = addDays(mondayOf(todayISO()), -7);
+      $('to').value = addDays(mondayOf(todayISO()), 55);
+
+      db.auth.onAuthStateChange((_evt, session) => route(session));
+      db.auth.getSession().then(({ data }) => route(data.session));
+
+      $('loginForm').addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        const fd = new FormData(ev.target);
+        $('loginError').hidden = true;
+        const { error } = await db.auth.signInWithPassword({ email: fd.get('email'), password: fd.get('password') });
+        if (error) { $('loginError').textContent = errMsg(error); $('loginError').hidden = false; }
+      });
+      $('signOut').addEventListener('click', async (ev) => { ev.preventDefault(); await db.auth.signOut(); });
+
+      for (const id of ['from', 'to']) $(id).addEventListener('change', load);
+      for (const id of ['fStatus', 'fStudio', 'fText']) $(id).addEventListener('input', render);
+      $('newBtn').onclick = () => openEditor(null);
+      $('recheckBtn').onclick = recheck;
+      $('closeBtn').onclick = closeCompleted;
+      $('csvBtn').onclick = exportCsv;
+      document.querySelectorAll('.tabs button').forEach((b) => (b.onclick = () => showTab(b.dataset.tab)));
+      $('prevWeek').onclick = () => { weekStart = addDays(weekStart, -7); loadWeek(); };
+      $('nextWeek').onclick = () => { weekStart = addDays(weekStart, 7); loadWeek(); };
+      $('thisWeek').onclick = () => { weekStart = mondayOf(todayISO()); loadWeek(); };
+      $('editForm').addEventListener('submit', saveEditor);
+      $('deleteBtn').onclick = deleteBooking;
+      const sf = $('showForm');
+      sf.studio.innerHTML = opts(STUDIOS);
+      sf.live_recorded.innerHTML = opts(LIVE_RECORDED, true);
+      $('showDays').innerHTML = DAY_SHORT.map((d, i) => `<label><input type="checkbox" name="day" value="${i + 1}"> ${d}</label>`).join('');
+      $('newShowBtn').onclick = () => openShow(null);
+      sf.addEventListener('submit', saveShow);
+      $('deleteShowBtn').onclick = deleteShow;
+    }
+
+    let channel;
+    async function route(session) {
+      $('login').hidden = !!session;
+      $('signOut').hidden = !session;
+      $('app').hidden = true;
+      $('denied').hidden = true;
+      if (!session) { if (channel) { db.removeChannel(channel); channel = null; } return; }
+      const { data: isEng, error } = await db.rpc('is_engineer');
+      if (error || !isEng) { $('denied').hidden = false; return; }
+      $('app').hidden = false;
+      await load();
+      if (!channel) {
+        let t;
+        channel = db.channel('bookings-console')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
+            clearTimeout(t);
+            t = setTimeout(() => { load(); if (!$('tab-week').hidden) loadWeek(); }, 400);
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'weekly_shows' }, () => {
+            clearTimeout(t);
+            t = setTimeout(() => { if (!$('tab-shows').hidden) loadShows(); if (!$('tab-week').hidden) loadWeek(); }, 400);
+          })
+          .subscribe();
+      }
+    }
+
+    async function load() {
+      let q = db.from('bookings').select('*').order('booking_date').order('start_time');
+      if ($('from').value) q = q.gte('booking_date', $('from').value);
+      if ($('to').value) q = q.lte('booking_date', $('to').value);
+      const { data, error } = await q;
+      if (error) return toast(`Could not load bookings: ${errMsg(error)}`, 'bad');
+      rows = data;
+      render();
+    }
+
+    function filtered() {
+      const st = $('fStatus').value, stu = $('fStudio').value, text = $('fText').value.trim().toLowerCase();
+      return rows.filter((b) => (!st || b.status === st) && (!stu || b.studio === stu) &&
+        (!text || [b.ref, b.title, b.requester_name, b.department, b.requester_email, b.producer, b.notes, b.crew]
+          .join(' ').toLowerCase().includes(text)));
+    }
+
+    function render() {
+      const list = filtered();
+      $('count').textContent = `${list.length} of ${rows.length} booking(s) in range`;
+      if (!list.length) { $('tab-table').innerHTML = '<div class="empty">No bookings match.</div>'; return; }
+      $('tab-table').innerHTML = `<table class="sched"><thead><tr>
+        <th>Booking Ref</th><th>Date</th><th>Day</th><th>Start</th><th>End</th><th>Studio</th>
+        <th>Programme / Production</th><th>Department / Requester</th><th>Producer</th><th>Live / Rec</th>
+        <th>Crew / Technical Support</th><th>Status</th><th>Priority</th><th>Notes</th></tr></thead><tbody>
+        ${list.map((b) => `<tr data-id="${b.id}">
+          <td class="nowrap"><button class="linkish" data-open="${b.id}">${esc(b.ref)}</button></td>
+          <td class="nowrap">${fmtDate(b.booking_date)}</td><td>${dayName(b.booking_date)}</td>
+          <td>${hm(b.start_time)}${b.setup_time && b.setup_time < b.start_time ? `<br><small class="count">setup ${hm(b.setup_time)}</small>` : ''}</td>
+          <td>${hm(b.end_time)}</td><td>${esc(b.studio)}</td><td>${esc(b.title)}</td>
+          <td>${esc(b.requester_name)}${b.department ? ` — ${esc(b.department)}` : ''}<br><small><a href="mailto:${esc(b.requester_email)}">${esc(b.requester_email)}</a></small></td>
+          <td>${esc(b.producer)}</td><td>${esc(b.live_recorded)}</td><td>${esc(b.crew)}</td>
+          <td><select data-status="${b.id}" aria-label="Status for ${esc(b.ref)}">${STATUSES.map((s) => `<option ${s === b.status ? 'selected' : ''}>${s}</option>`).join('')}</select>
+              <div style="margin-top:4px">${statusPill(b.status)}</div></td>
+          <td>${esc(b.priority)}</td><td class="notes">${esc(b.notes)}</td></tr>`).join('')}
+        </tbody></table>`;
+      $('tab-table').querySelectorAll('[data-open]').forEach((el) => (el.onclick = () => openEditor(rows.find((r) => r.id == el.dataset.open))));
+      $('tab-table').querySelectorAll('[data-status]').forEach((el) => (el.onchange = () => changeStatus(Number(el.dataset.status), el.value, el)));
+    }
+
+    function askReason(status) {
+      return new Promise((resolve) => {
+        const dlg = $('reason');
+        $('reasonTitle').textContent = `${status}: reason`;
+        dlg.querySelector('textarea').value = '';
+        dlg.onclose = () => resolve(dlg.returnValue === 'ok' ? dlg.querySelector('textarea').value.trim() : null);
+        dlg.showModal();
+      });
+    }
+
+    async function changeStatus(id, status, selectEl) {
+      const b = rows.find((r) => r.id === id);
+      const patch = { status };
+      if (status === 'Declined' || status === 'Cancelled') {
+        const reason = await askReason(status);
+        if (reason === null) { selectEl.value = b.status; return; }
+        if (reason) patch.notes = (b.notes ? `${b.notes}\n` : '') + `Reason: ${reason}`;
+      }
+      const { data, error } = await db.from('bookings').update(patch).eq('id', id).select().single();
+      if (error) { selectEl.value = b.status; return toast(`Update failed: ${errMsg(error)}`, 'bad'); }
+      Object.assign(b, data);
+      if (data.status !== status) toast(`${data.ref}: cannot set ${status} — ${lastNote(data.notes)}`, 'bad', 8000);
+      else toast(`${data.ref} → ${data.status}${['Confirmed', 'Declined', 'Cancelled', 'Rescheduled'].includes(status) ? ' (requester emailed)' : ''}`, 'ok');
+      render();
+    }
+    const lastNote = (n) => (n || '').split('\n').pop().replace(/^\[[^\]]*\]\s*/, '');
+
+    function openEditor(b) {
+      editing = b;
+      const f = $('editForm');
+      f.reset();
+      $('editTitle').textContent = b ? `${b.ref} — ${b.title}` : 'New booking';
+      $('deleteBtn').hidden = !b;
+      const v = b || { booking_date: todayISO(), status: 'Requested', studio: STUDIOS[0] };
+      for (const el of f.elements) {
+        if (!el.name || !(el.name in v)) continue;
+        el.value = ['start_time', 'end_time', 'setup_time'].includes(el.name) ? hm(v[el.name]) : (v[el.name] ?? '');
+      }
+      const d = b?.details || {};
+      const entries = Object.entries(d);
+      $('detailsBox').innerHTML = entries.length
+        ? `<h4 style="margin:0 0 8px">Request details</h4><dl class="details">${entries.map(([k, val]) => `<dt>${esc(k)}</dt><dd>${esc(val)}</dd>`).join('')}</dl>
+           <p class="count" style="margin-top:10px">Submitted ${new Date(b.created_at).toLocaleString('en-GB')}${b.approved_at ? ` · approved ${new Date(b.approved_at).toLocaleString('en-GB')}` : ''}</p>`
+        : '';
+      $('edit').showModal();
+    }
+
+    async function saveEditor(ev) {
+      if (ev.submitter?.value !== 'save') return;
+      ev.preventDefault();
+      const f = $('editForm');
+      if (!f.reportValidity()) return;
+      const patch = {};
+      for (const el of f.elements) {
+        if (!el.name) continue;
+        const val = el.value.trim();
+        patch[el.name] = val === '' && !['notes', 'title', 'requester_name', 'requester_email'].includes(el.name) ? null : val;
+      }
+      const wanted = patch.status;
+      const res = editing
+        ? await db.from('bookings').update(patch).eq('id', editing.id).select().single()
+        : await db.from('bookings').insert(patch).select().single();
+      if (res.error) return toast(`Save failed: ${errMsg(res.error)}`, 'bad', 8000);
+      $('edit').close();
+      if (res.data.status !== wanted) toast(`${res.data.ref} saved as ${res.data.status} — ${lastNote(res.data.notes)}`, 'bad', 8000);
+      else toast(`${res.data.ref} saved`, 'ok');
+      load();
+    }
+
+    async function deleteBooking() {
+      if (!editing || !confirm(`Delete ${editing.ref} permanently? This cannot be undone.`)) return;
+      const { error } = await db.from('bookings').delete().eq('id', editing.id);
+      if (error) return toast(`Delete failed: ${errMsg(error)}`, 'bad');
+      $('edit').close();
+      toast(`${editing.ref} deleted`, 'ok');
+      load();
+    }
+
+    async function recheck() {
+      const { data, error } = await db.rpc('recheck_all_conflicts');
+      if (error) return toast(errMsg(error), 'bad');
+      toast(`Conflict re-check complete: ${data} booking(s) changed status`, 'ok');
+      load();
+    }
+
+    async function closeCompleted() {
+      const { data, error } = await db.rpc('close_completed');
+      if (error) return toast(errMsg(error), 'bad');
+      toast(`${data} booking(s) moved to Completed`, 'ok');
+      load();
+    }
+
+    function exportCsv() {
+      const head = ['Booking Ref', 'Date', 'Day', 'Start Time', 'End Time', 'Studio', 'Programme / Production',
+        'Department / Requester', 'Producer / Coordinator', 'Live / Recorded', 'Crew / Technical Support',
+        'Status', 'Priority', 'Notes', 'Setup Access', 'Requester Email'];
+      const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+      const lines = filtered().map((b) => [b.ref, b.booking_date, dayName(b.booking_date), hm(b.start_time), hm(b.end_time),
+        b.studio, b.title, [b.requester_name, b.department, b.contact_number].filter(Boolean).join(' — '), b.producer,
+        b.live_recorded, b.crew, b.status, b.priority, b.notes, hm(b.setup_time), b.requester_email].map(cell).join(','));
+      const blob = new Blob(['﻿' + [head.map(cell).join(','), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8' });
+      const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `ztn-schedule-${todayISO()}.csv` });
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function showTab(name) {
+      document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
+      $('tab-table').hidden = name !== 'table';
+      $('tab-week').hidden = name !== 'week';
+      $('tab-shows').hidden = name !== 'shows';
+      if (name === 'week') loadWeek();
+      if (name === 'shows') loadShows();
+    }
+
+    async function loadWeek() {
+      $('weekLabel').textContent = `${fmtDate(weekStart)} – ${fmtDate(addDays(weekStart, 6))}`;
+      const { data, error } = await db.rpc('week_overview', { p_start: weekStart });
+      if (error) return toast(errMsg(error), 'bad');
+      $('weekGrid').innerHTML = weekGridHTML(data, weekStart, { now: nowParts() });
+    }
+
+    async function loadShows() {
+      const { data, error } = await db.from('weekly_shows').select('*').order('start_time').order('name');
+      if (error) return toast(`Could not load weekly shows: ${errMsg(error)}`, 'bad');
+      shows = data;
+      const today = todayISO();
+      $('showsTable').innerHTML = !shows.length ? '<div class="empty">No regular shows yet.</div>' : `<table class="sched"><thead><tr>
+        <th>Show / Programme</th><th>Days</th><th>Start</th><th>End</th><th>Studio</th><th>Live / Rec</th>
+        <th>Producer / Presenter</th><th>Active from</th><th>Active to</th><th>Notes</th></tr></thead><tbody>
+        ${shows.map((s) => {
+          const ended = s.active_to && s.active_to < today;
+          return `<tr${ended ? ' class="ended"' : ''}>
+          <td><button class="linkish" data-show="${s.id}">${esc(s.name)}</button>${ended ? ' <small class="count">(ended)</small>' : ''}</td>
+          <td class="nowrap">${esc(daysLabel(s.days))}</td><td>${hm(s.start_time)}</td><td>${hm(s.end_time)}</td>
+          <td class="nowrap">${esc(s.studio)}</td><td>${esc(s.live_recorded)}</td><td>${esc(s.presenter)}</td>
+          <td class="nowrap">${fmtDate(s.active_from)}</td><td class="nowrap">${fmtDate(s.active_to)}</td><td class="notes">${esc(s.notes)}</td></tr>`;
+        }).join('')}</tbody></table>`;
+      $('showsTable').querySelectorAll('[data-show]').forEach((el) => (el.onclick = () => openShow(shows.find((s) => s.id == el.dataset.show))));
+    }
+
+    function openShow(s) {
+      editingShow = s;
+      const f = $('showForm');
+      f.reset();
+      $('showTitle').textContent = s ? s.name : 'Add weekly show';
+      $('deleteShowBtn').hidden = !s;
+      const v = s || { studio: STUDIOS[0], days: [] };
+      for (const el of f.elements) {
+        if (!el.name || el.name === 'day' || !(el.name in v)) continue;
+        el.value = ['start_time', 'end_time'].includes(el.name) ? hm(v[el.name]) : (v[el.name] ?? '');
+      }
+      f.querySelectorAll('input[name="day"]').forEach((c) => (c.checked = v.days.includes(Number(c.value))));
+      $('showEdit').showModal();
+    }
+
+    async function saveShow(ev) {
+      if (ev.submitter?.value !== 'save') return;
+      ev.preventDefault();
+      const f = $('showForm');
+      if (!f.reportValidity()) return;
+      const days = [...f.querySelectorAll('input[name="day"]:checked')].map((c) => Number(c.value));
+      if (!days.length) return toast('Tick at least one day.', 'bad');
+      if (f.end_time.value <= f.start_time.value) return toast('End must be later than start.', 'bad');
+      const row = { days };
+      for (const name of ['name', 'start_time', 'end_time', 'studio', 'live_recorded', 'presenter', 'active_from', 'active_to', 'notes']) {
+        const val = f[name].value.trim();
+        row[name] = val === '' && name !== 'notes' ? null : val;
+      }
+      const res = editingShow
+        ? await db.from('weekly_shows').update(row).eq('id', editingShow.id)
+        : await db.from('weekly_shows').insert(row);
+      if (res.error) return toast(`Save failed: ${errMsg(res.error)}`, 'bad', 8000);
+      $('showEdit').close();
+      toast(`${row.name} saved`, 'ok');
+      loadShows();
+    }
+
+    async function deleteShow() {
+      if (!editingShow || !confirm(`Delete the regular show "${editingShow.name}"? To keep it on record, set an "Active to" date instead.`)) return;
+      const { error } = await db.from('weekly_shows').delete().eq('id', editingShow.id);
+      if (error) return toast(`Delete failed: ${errMsg(error)}`, 'bad');
+      $('showEdit').close();
+      toast(`${editingShow.name} deleted`, 'ok');
+      loadShows();
+    }
+  </script>
+</body>
+</html>

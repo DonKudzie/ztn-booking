@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ZTN Studio Monitor</title>
+  <meta name="description" content="Weekly studio overview for the studio monitor.">
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body class="monitor">
+  <header class="mon-head">
+    <div>
+      <h1>ZTN WEEKLY STUDIO OVERVIEW</h1>
+      <div class="week-label" id="weekLabel"></div>
+      <div class="legend"><span><i class="l-show"></i>Regular show</span><span><i class="l-busy"></i>Booking</span><span><i class="l-clash"></i>Same studio used twice</span></div>
+    </div>
+    <div class="clock" id="clock"></div>
+  </header>
+  <div id="setup"></div>
+  <div class="mon-grid" id="grid"></div>
+  <footer class="mon-foot" id="foot"></footer>
+
+  <script type="module">
+    import { db, isConfigured, showNotConfigured, mondayOf, fmtDate, nowParts, toMin, hm, esc, weekGridHTML, errMsg } from './assets/app.js';
+
+    // URL options: ?key=MONITOR_KEY  ?week=YYYY-MM-DD (any day in the week)  ?refresh=60 (seconds)
+    const params = new URLSearchParams(location.search);
+    const key = params.get('key') || null;
+    const fixedWeek = params.get('week');
+    const refreshSec = Math.max(15, Number(params.get('refresh')) || 60);
+    const $ = (id) => document.getElementById(id);
+    let rows = [];
+    let weekStart = null;
+    let lastOk = null;
+
+    function tick() {
+      const now = nowParts();
+      $('clock').textContent = now.time.slice(0, 5);
+      renderFoot(now);
+    }
+
+    function renderFoot(now) {
+      const today = rows.filter((b) => b.booking_date === now.date && (b.kind === 'show' || b.status === 'Confirmed'));
+      const live = today.filter((b) => toMin(b.start_time) <= now.minutes && now.minutes < toMin(b.end_time));
+      const next = today.filter((b) => toMin(b.start_time) > now.minutes).sort((a, b) => a.start_time.localeCompare(b.start_time))[0];
+      const parts = live.map((b) => `<span><span class="tag live">ON NOW</span>${esc(b.studio)} · ${esc(b.title)} (until ${hm(b.end_time)})</span>`);
+      if (next) parts.push(`<span><span class="tag next">NEXT</span>${hm(next.start_time)} ${esc(next.studio)} · ${esc(next.title)}</span>`);
+      if (!parts.length) parts.push('<span>Nothing more in the studios today.</span>');
+      const stale = lastOk && Date.now() - lastOk > refreshSec * 3000;
+      parts.push(`<span class="status-dot">${stale ? '⚠ connection lost — showing last data' : `updated ${new Date(lastOk || Date.now()).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`}</span>`);
+      $('foot').innerHTML = parts.join('');
+    }
+
+    async function refresh() {
+      const now = nowParts();
+      weekStart = mondayOf(fixedWeek || now.date);
+      $('weekLabel').textContent = `Week commencing ${fmtDate(weekStart, { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}`;
+      const { data, error } = await db.rpc('week_overview', { p_start: weekStart, p_key: key });
+      if (error) {
+        if (/monitor key/i.test(errMsg(error))) {
+          $('grid').innerHTML = '<div class="notice bad">This screen needs the monitor key: add <code>?key=…</code> to the address.</div>';
+          return;
+        }
+        renderFoot(now);
+        return; // keep showing the last good grid
+      }
+      rows = data;
+      lastOk = Date.now();
+      $('grid').innerHTML = weekGridHTML(rows, weekStart, { now: fixedWeek ? null : now });
+      renderFoot(now);
+    }
+
+    if (!isConfigured) {
+      showNotConfigured($('setup'));
+    } else {
+      refresh();
+      setInterval(refresh, refreshSec * 1000);
+      setInterval(tick, 1000);
+      tick();
+      // Reload every 6 hours so the screen picks up site updates.
+      setTimeout(() => location.reload(), 6 * 3600 * 1000);
+    }
+  </script>
+</body>
+</html>

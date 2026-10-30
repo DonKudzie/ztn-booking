@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ZTN Studio Booking</title>
+  <meta name="description" content="Request a ZTN studio booking.">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>ZTN STUDIO BOOKING REQUEST</h1>
+    <nav>
+      <a href="index.html" aria-current="page">Book a studio</a>
+      <a href="engineer.html">Engineers</a>
+      <a href="monitor.html">Studio monitor</a>
+    </nav>
+  </header>
+
+  <main>
+    <div id="setup"></div>
+    <p class="lead">Complete all relevant fields and submit. A booking is confirmed only after Studio/Technical approval &mdash; you will receive an email.</p>
+
+    <div id="result" hidden></div>
+
+    <form id="booking" novalidate>
+      <section class="card">
+        <h2>1. Requester and programme details</h2>
+        <div class="body grid">
+          <label class="field"><span>Requester name *</span><input name="requester_name" required maxlength="120" autocomplete="name"></label>
+          <label class="field"><span>Department / Unit</span><input name="department" maxlength="120"></label>
+          <label class="field"><span>Email *</span><input name="requester_email" type="email" required maxlength="200" autocomplete="email"><small>Confirmation is sent here.</small></label>
+          <label class="field"><span>Contact number</span><input name="contact_number" type="tel" maxlength="60" autocomplete="tel"></label>
+          <label class="field"><span>Programme / production title *</span><input name="title" required maxlength="200"></label>
+          <label class="field"><span>Programme type</span>
+            <select name="programme_type"><option value=""></option><option>News bulletin</option><option>Interview</option><option>Talk show</option><option>Podcast</option><option>Commercial</option><option>Livestream</option><option>Special event</option><option>Other</option></select></label>
+          <label class="field"><span>Producer / coordinator</span><input name="producer" maxlength="120"></label>
+          <label class="field"><span>Live or recorded</span>
+            <select name="live_recorded"><option value=""></option><option>Live</option><option>Recorded</option><option>Live-to-tape</option></select></label>
+          <label class="field"><span>Language(s)</span>
+            <select name="Language(s)"><option value=""></option><option>English</option><option>Shona</option><option>Ndebele</option><option>English/Shona</option><option>Other</option></select></label>
+          <label class="field span-3"><span>Purpose / brief</span><textarea name="Purpose / brief" maxlength="1000"></textarea></label>
+          <label class="field"><span>Target audience / platform</span><input name="Target audience / platform" maxlength="200"></label>
+          <label class="field"><span>No. of participants</span><input name="No. of participants" type="number" min="0" max="500"></label>
+          <label class="field"><span>Expected duration</span><input name="Expected duration" maxlength="60" placeholder="e.g. 45 min"></label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>2. Booking requirements</h2>
+        <div class="body grid">
+          <label class="field"><span>Requested date *</span><input name="booking_date" type="date" required></label>
+          <label class="field"><span>Start time *</span><input name="start_time" type="time" required step="300"></label>
+          <label class="field"><span>End time *</span><input name="end_time" type="time" required step="300"></label>
+          <label class="field"><span>Studio requested *</span>
+            <select name="studio" required><option value=""></option><option>Studio 1</option><option>Studio 2</option><option>Audio Studio</option><option>Other</option></select></label>
+          <label class="field"><span>Setup access time</span><input name="setup_time" type="time" step="300"><small>When your team needs the studio before the start. Counted when checking for clashes.</small></label>
+          <label class="field"><span>Booking priority</span>
+            <select name="priority"><option value=""></option><option>High</option><option>Urgent</option></select></label>
+          <div class="field span-3" id="availability" aria-live="polite"></div>
+          <label class="field span-3"><span>Alternative date/time</span><input name="Alternative date/time" maxlength="200"></label>
+          <label class="field"><span>Set / background required</span><input name="Set / background required" maxlength="200"></label>
+          <label class="field"><span>Seating / layout</span><input name="Seating / layout" maxlength="200"></label>
+          <label class="field"><span>Audience required?</span><select name="Audience required?"><option value=""></option><option>Yes</option><option>No</option><option>To be confirmed</option></select></label>
+          <label class="field"><span>Camera requirement</span><select name="Camera requirement"><option value=""></option><option>1 camera</option><option>2 cameras</option><option>3 cameras</option><option>PTZ / remote</option><option>To be confirmed</option></select></label>
+          <label class="field"><span>Audio / microphones</span><select name="Audio / microphones"><option value=""></option><option>Handheld mics</option><option>Lapel mics</option><option>Wireless mics</option><option>Studio microphones</option><option>Mixed / other</option></select></label>
+          <label class="field"><span>Lighting requirement</span><select name="Lighting requirement"><option value=""></option><option>Standard</option><option>Special lighting</option><option>To be confirmed</option></select></label>
+          <label class="field"><span>Graphics / CG</span><input name="Graphics / CG" maxlength="200"></label>
+          <label class="field"><span>VT / playback</span><select name="VT / playback"><option value=""></option><option>Yes</option><option>No</option><option>To be confirmed</option></select></label>
+          <label class="field"><span>Teleprompter</span><select name="Teleprompter"><option value=""></option><option>Yes</option><option>No</option><option>To be confirmed</option></select></label>
+          <label class="field"><span>Livestream platform(s)</span><input name="Livestream platform(s)" maxlength="200"></label>
+          <label class="field"><span>Remote guest / video call</span><select name="Remote guest / video call"><option value=""></option><option>Yes</option><option>No</option><option>To be confirmed</option></select></label>
+          <label class="field"><span>Recording required?</span><select name="Recording required?"><option value=""></option><option>Yes</option><option>No</option><option>To be confirmed</option></select></label>
+          <label class="field span-3"><span>Special equipment / notes</span><textarea name="Special equipment / notes" maxlength="1000"></textarea></label>
+          <label class="field"><span>Rehearsal / sound check required?</span><select name="Rehearsal / sound check required?"><option value=""></option><option>Yes</option><option>No</option><option>To be confirmed</option></select></label>
+          <label class="field span-2"><span>Rehearsal date/time</span><input name="Rehearsal date/time" maxlength="200"></label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>3. Technical and production requirements</h2>
+        <div class="body grid">
+          <label class="field span-3"><span>Production crew requested</span><input name="crew_requested" maxlength="300"></label>
+          <fieldset class="field span-3" style="border:0;padding:0;margin:0">
+            <span>Operators needed</span>
+            <div class="checks">
+              <label><input type="checkbox" name="op" value="Studio camera operator"> Studio camera operator</label>
+              <label><input type="checkbox" name="op" value="Audio operator"> Audio operator</label>
+              <label><input type="checkbox" name="op" value="Vision mixer / switcher operator"> Vision mixer / switcher</label>
+              <label><input type="checkbox" name="op" value="VT / playback operator"> VT / playback</label>
+              <label><input type="checkbox" name="op" value="CG operator"> CG operator</label>
+              <label><input type="checkbox" name="op" value="Streaming / encoder operator"> Streaming / encoder</label>
+            </div>
+          </fieldset>
+          <label class="field span-3"><span>Technical support notes</span><textarea name="tech_notes" maxlength="1000"></textarea></label>
+          <label class="field"><span>Content / media supplied by</span><input name="Content / media supplied by" maxlength="200"></label>
+          <label class="field"><span>Media deadline</span><input name="Media deadline" type="date"></label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>4. Confirmation</h2>
+        <div class="body">
+          <div class="checks" style="margin-bottom:14px">
+            <label><input type="checkbox" name="confirm" required> I confirm these details are correct and understand the booking is not final until approved.</label>
+          </div>
+          <div id="formError" class="notice bad" hidden></div>
+          <div class="actions">
+            <button class="btn primary" type="submit" id="submitBtn">Submit request</button>
+            <button class="btn" type="reset">Reset form</button>
+          </div>
+        </div>
+      </section>
+    </form>
+  </main>
+
+  <script type="module">
+    import { db, isConfigured, showNotConfigured, todayISO, toMin, hm, esc, errMsg } from './assets/app.js';
+
+    const form = document.getElementById('booking');
+    const errBox = document.getElementById('formError');
+    const result = document.getElementById('result');
+    const avail = document.getElementById('availability');
+    const CORE = ['requester_name', 'department', 'requester_email', 'contact_number', 'title', 'programme_type',
+      'producer', 'live_recorded', 'booking_date', 'start_time', 'end_time', 'setup_time', 'studio', 'priority'];
+    const SKIP = new Set([...CORE, 'op', 'confirm', 'crew_requested', 'tech_notes']);
+
+    if (!isConfigured) showNotConfigured(document.getElementById('setup'));
+    form.booking_date.min = todayISO();
+
+    function showError(msg) {
+      errBox.textContent = msg;
+      errBox.hidden = !msg;
+      if (msg) errBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function collect() {
+      const fd = new FormData(form);
+      const p = {};
+      for (const k of CORE) p[k] = (fd.get(k) || '').toString().trim();
+      const ops = fd.getAll('op');
+      const crew = [fd.get('crew_requested'), ops.join(', '), fd.get('tech_notes')]
+        .map((s) => (s || '').toString().trim()).filter(Boolean).join(' | ');
+      p.crew = crew;
+      const details = {};
+      for (const [k, v] of fd.entries()) {
+        if (SKIP.has(k) || !String(v).trim()) continue;
+        details[k] = String(v).trim();
+      }
+      if (ops.length) details['Operators needed'] = ops.join(', ');
+      if ((fd.get('tech_notes') || '').toString().trim()) details['Technical support notes'] = fd.get('tech_notes').toString().trim();
+      if ((fd.get('crew_requested') || '').toString().trim()) details['Production crew requested'] = fd.get('crew_requested').toString().trim();
+      p.details = details;
+      return p;
+    }
+
+    function validate(p) {
+      const missing = [];
+      if (!p.requester_name) missing.push('Requester name');
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(p.requester_email)) missing.push('a valid email');
+      if (!p.title) missing.push('Programme / production title');
+      if (!p.booking_date) missing.push('Requested date');
+      if (!p.start_time) missing.push('Start time');
+      if (!p.end_time) missing.push('End time');
+      if (!p.studio) missing.push('Studio requested');
+      if (missing.length) return `Please complete: ${missing.join(', ')}.`;
+      if (p.booking_date < todayISO()) return 'The requested date is in the past.';
+      if (toMin(p.end_time) <= toMin(p.start_time)) return 'End time must be later than start time (bookings cannot run past midnight).';
+      if (p.setup_time && toMin(p.setup_time) > toMin(p.start_time)) return 'Setup access time must be at or before the start time.';
+      if (!form.confirm.checked) return 'Please tick the confirmation box.';
+      return '';
+    }
+
+    let availTimer;
+    async function showAvailability() {
+      const date = form.booking_date.value, studio = form.studio.value;
+      if (!db || !date || !studio) { avail.innerHTML = ''; return; }
+      const { data, error } = await db.rpc('day_busy', { p_date: date, p_studio: studio });
+      if (error) { avail.innerHTML = ''; return; }
+      const s = toMin(form.start_time.value), e = toMin(form.end_time.value);
+      const eff = form.setup_time.value ? Math.min(toMin(form.setup_time.value), s ?? Infinity) : s;
+      const chips = (data || []).map((b) => {
+        const bs = toMin(b.start_time), be = toMin(b.end_time);
+        const overlap = s != null && e != null && bs < e && eff < be;
+        const show = b.status === 'Show';
+        const kind = overlap ? (show ? 'show-overlap' : 'overlap') : show ? 'show' : (b.status === 'Confirmed' ? 'firm' : 'pending');
+        const what = show ? `regular show: ${esc(b.label)}` : (b.status === 'Confirmed' ? 'confirmed' : 'pending');
+        return `<span class="chip ${kind}">${hm(b.start_time)}–${hm(b.end_time)} · ${what}${overlap ? ' · overlaps your time' : ''}</span>`;
+      });
+      const showHit = (data || []).some((b) => b.status === 'Show' && s != null && e != null && toMin(b.start_time) < e && eff < toMin(b.end_time));
+      avail.innerHTML = `<span>Already in ${esc(studio)} that day</span>` +
+        (chips.length ? `<div class="busy-list">${chips.join('')}</div>` : '<small>Nothing booked yet — the studio is free all day.</small>') +
+        (showHit ? '<small>Your time overlaps a regular show. You can still submit; the studio engineer will decide.</small>' : '');
+    }
+    form.addEventListener('input', (ev) => {
+      if (['booking_date', 'studio', 'start_time', 'end_time', 'setup_time'].includes(ev.target.name)) {
+        clearTimeout(availTimer);
+        availTimer = setTimeout(showAvailability, 250);
+      }
+    });
+
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      showError('');
+      const p = collect();
+      const problem = validate(p);
+      if (problem) return showError(problem);
+      if (!db) return showError('The booking system is not connected yet (assets/config.js).');
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Submitting…';
+      const { data, error } = await db.rpc('submit_booking', { p });
+      btn.disabled = false;
+      btn.textContent = 'Submit request';
+      if (error) return showError(`Could not submit: ${errMsg(error)}`);
+
+      const conflict = data.status === 'Conflict';
+      const shows = data.show_overlaps || [];
+      result.hidden = false;
+      result.innerHTML = `
+        <div class="notice ${conflict ? 'warn' : 'ok'}">
+          <h2 style="margin:0 0 6px">${conflict ? 'Submitted — but it clashes' : 'Request submitted'}</h2>
+          <p style="margin:0 0 6px">Your booking reference is <strong>${esc(data.ref)}</strong> (status: ${esc(data.status)}).</p>
+          <p style="margin:0">${conflict
+            ? 'The requested time overlaps another booking in that studio. The studio team will contact you to agree another slot.'
+            : `${esc(p.studio)}, ${esc(p.booking_date)} ${esc(p.start_time)}–${esc(p.end_time)}. You will get an email once the Studio/Technical team approves it.`}</p>
+          ${shows.length ? `<p style="margin:6px 0 0"><strong>Note:</strong> this time overlaps the regular show ${shows.map(esc).join(', ')} in ${esc(p.studio)}. The studio engineer will decide whether it can be approved.</p>` : ''}
+        </div>
+        <button class="btn" id="another">Submit another request</button>`;
+      form.hidden = true;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      document.getElementById('another').onclick = () => {
+        form.reset();
+        form.hidden = false;
+        result.hidden = true;
+        avail.innerHTML = '';
+      };
+    });
+    form.addEventListener('reset', () => { showError(''); avail.innerHTML = ''; });
+  </script>
+</body>
+</html>
